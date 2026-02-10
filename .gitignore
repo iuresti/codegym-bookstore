@@ -1,0 +1,15 @@
+.env
+.env.local
+.env.*.local
+node_modules
+dist
+.DS_Store
+*.pem
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.idea
