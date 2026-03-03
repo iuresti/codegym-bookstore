@@ -1,21 +1,28 @@
 import * as booksService from '../../mocks/booksData';
+import axiosInstance from '../api/axiosInstance';
 
-const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const bookService = {
   // Get all books
   async getAllBooks() {
-    await delay();
-    return {
-      success: true,
-      data: booksService.booksData,
-      count: booksService.booksData.length,
-    };
+    try {
+      const response = await axiosInstance.get('/books');
+      const books = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data ?? [];
+
+      return {
+        success: true,
+        data: books,
+        count: books.length,
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener libros', data: [] };
+    }
   },
 
   // Get book by ID
   async getBookById(id) {
-    await delay();
     const book = booksService.getBookById(id);
     if (book) {
       return { success: true, data: book };
@@ -25,18 +32,44 @@ export const bookService = {
 
   // Search books
   async searchBooks(query) {
-    await delay();
-    const results = booksService.searchBooks(query);
-    return {
-      success: true,
-      data: results,
-      count: results.length,
-    };
+    const normalizedQuery = (query ?? '').toString().trim().toLowerCase();
+
+    try {
+      const response = await axiosInstance.get('/books');
+      const books = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data ?? [];
+
+      const results = normalizedQuery
+        ? books.filter((book) => {
+            const title = (book.title ?? '').toString().toLowerCase();
+            const author = (book.author ?? '').toString().toLowerCase();
+            const genre = (book.genre ?? '').toString().toLowerCase();
+            return (
+              title.includes(normalizedQuery) ||
+              author.includes(normalizedQuery) ||
+              genre.includes(normalizedQuery)
+            );
+          })
+        : books;
+
+      return {
+        success: true,
+        data: results,
+        count: results.length,
+      };
+    } catch (error) {
+      const results = booksService.searchBooks(query ?? '');
+      return {
+        success: true,
+        data: results,
+        count: results.length,
+      };
+    }
   },
 
   // Get books by genre
   async getBooksByGenre(genre) {
-    await delay();
     const results = booksService.getBooksByGenre(genre);
     return {
       success: true,
@@ -47,7 +80,6 @@ export const bookService = {
 
   // Get top rated books
   async getTopBooks(limit = 5) {
-    await delay();
     const results = booksService.getTopBooks(limit);
     return {
       success: true,
@@ -58,9 +90,9 @@ export const bookService = {
 
   // Create book (Admin)
   async createBook(bookData) {
-    await delay();
     try {
-      const newBook = booksService.addBook(bookData);
+      const response = await axiosInstance.post('/books', bookData);
+      const newBook = response.data;
       return { success: true, data: newBook };
     } catch (error) {
       return { success: false, error: 'Error al crear el libro' };
@@ -69,13 +101,10 @@ export const bookService = {
 
   // Update book (Admin)
   async updateBook(id, bookData) {
-    await delay();
     try {
-      const updatedBook = booksService.updateBook(id, bookData);
-      if (updatedBook) {
-        return { success: true, data: updatedBook };
-      }
-      return { success: false, error: 'Libro no encontrado' };
+      const response = await axiosInstance.put(`/books/${id}`, bookData);
+      const updatedBook = response.data;
+      return { success: true, data: updatedBook };
     } catch (error) {
       return { success: false, error: 'Error al actualizar el libro' };
     }
@@ -83,13 +112,9 @@ export const bookService = {
 
   // Delete book (Admin)
   async deleteBook(id) {
-    await delay();
     try {
-      const result = booksService.deleteBook(id);
-      if (result) {
-        return { success: true, message: 'Libro eliminado correctamente' };
-      }
-      return { success: false, error: 'Libro no encontrado' };
+      await axiosInstance.delete(`/books/${id}`);
+      return { success: true, message: 'Libro eliminado correctamente' };
     } catch (error) {
       return { success: false, error: 'Error al eliminar el libro' };
     }
@@ -97,9 +122,7 @@ export const bookService = {
 
   // Get available genres
   async getGenres() {
-    await delay();
     const genres = [...new Set(booksService.booksData.map(book => book.genre))];
     return { success: true, data: genres };
   },
 };
-

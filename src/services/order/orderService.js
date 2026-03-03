@@ -1,4 +1,5 @@
 import * as ordersMocks from '../../mocks/ordersData';
+import axiosInstance from '../api/axiosInstance';
 
 const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -37,8 +38,11 @@ export const orderService = {
 
   // Get all orders (Admin)
   async getAllOrders() {
-    await delay();
-    const orders = ordersMocks.getAllOrders();
+    const response = await axiosInstance.get('/orders');
+    const orders = Array.isArray(response.data)
+            ? response.data
+            : response.data?.data ?? [];
+
     return {
       success: true,
       data: orders,
